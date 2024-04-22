@@ -1,13 +1,9 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  OnModuleInit,
-} from '@nestjs/common';
+import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PrismaClient } from '@prisma/client';
 import { PaginationDto } from 'src/shared/dto/pagination.dto';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class ProductsService extends PrismaClient implements OnModuleInit {
@@ -25,29 +21,32 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
   }
 
   async findAll(paginationDto: PaginationDto) {
-    try {
-      const { page, limit } = paginationDto;
-      const skipResults = (page - 1) * limit;
-      const totalRows = await this.product.count();
-      const lastPage = Math.ceil(totalRows / limit);
-      const dataRes = await this.product.findMany({
-        where: {
-          isAvailable: true,
-        },
-        skip: skipResults,
-        take: limit,
+    const { page, limit } = paginationDto;
+    const skipResults = (page - 1) * limit;
+    const totalRows = await this.product.count();
+    const lastPage = Math.ceil(totalRows / limit);
+    const dataRes = await this.product.findMany({
+      where: {
+        isAvailable: true,
+      },
+      skip: skipResults,
+      take: limit,
+    });
+    console.log(dataRes.length);
+    if (!dataRes.length) {
+      throw new RpcException({
+        message: 'No results found',
+        status: HttpStatus.NO_CONTENT,
       });
-      return {
-        data: dataRes,
-        meta: {
-          totalRows: totalRows,
-          lastPage: lastPage,
-          actualPage: page,
-        },
-      };
-    } catch (error) {
-      throw new Error(error);
     }
+    return {
+      data: dataRes,
+      meta: {
+        totalRows: totalRows,
+        lastPage: lastPage,
+        actualPage: page,
+      },
+    };
   }
 
   async findOne(id: number) {
@@ -55,7 +54,10 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
       where: { id, isAvailable: true },
     });
     if (!product) {
-      throw new NotFoundException(`Could not find product ${id}`);
+      throw new RpcException({
+        message: `Could not find product ${id}`,
+        status: HttpStatus.NOT_FOUND,
+      });
     }
     return product;
   }
