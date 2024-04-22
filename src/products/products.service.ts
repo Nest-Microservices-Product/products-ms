@@ -19,13 +19,27 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
     });
   }
 
-  findAll(paginationDto: PaginationDto) {
-    const { page, limit } = paginationDto;
-    const skipResults = (page - 1) * limit;
-    return this.product.findMany({
-      skip: skipResults,
-      take: limit,
-    });
+  async findAll(paginationDto: PaginationDto) {
+    try {
+      const { page, limit } = paginationDto;
+      const skipResults = (page - 1) * limit;
+      const totalRows = await this.product.count();
+      const lastPage = Math.ceil(totalRows / limit);
+      const dataRes = await this.product.findMany({
+        skip: skipResults,
+        take: limit,
+      });
+      return {
+        data: dataRes,
+        meta: {
+          totalRows: totalRows,
+          lastPage: lastPage,
+          actualPage: page,
+        },
+      };
+    } catch (error) {
+      throw new Error(error);
+    }
   }
 
   findOne(id: number) {
