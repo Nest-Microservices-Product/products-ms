@@ -15,6 +15,7 @@ const getEnvVars = () => {
 
   return {
     port: envVars.PORT,
+    dataBaseUrl: envVars.DATABASE_URL,
   };
 };
 
