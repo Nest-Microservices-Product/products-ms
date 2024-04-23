@@ -89,6 +89,7 @@ export class ProductsService extends PrismaClient implements OnModuleInit {
         id: {
           in: idsSet,
         },
+        isAvailable : true
       },
     });
     if (products.length !== idsSet.length) {
