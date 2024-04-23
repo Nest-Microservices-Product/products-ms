@@ -38,4 +38,9 @@ export class ProductsController {
   remove(@Payload() id: number) {
     return this.productsService.remove(id);
   }
+
+  @MessagePattern({ cmd: 'validate_products' })
+  validateProducts(@Payload() arrayOfIds: number[]) {
+    return this.productsService.validateProducts(arrayOfIds);
+  }
 }
