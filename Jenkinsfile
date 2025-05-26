@@ -5,6 +5,7 @@ pipeline {
         APP_NAME = 'products-ms'
         REPO_URL = 'https://github.com/Nest-Microservices-Product/products-ms'
         SSH_CRED_ID = 'ssh-key-ec2'
+        SSH_CRED_ID_DIEGO = 'ssh-key-ec2-diego'
         EC2_USER = 'ubuntu'
         REMOTE_PATH = '/home/ubuntu/products-ms'
     }
@@ -31,9 +32,9 @@ pipeline {
                             break
                         case 'dev':
                             env.DEPLOY_ENV = 'development'
-                            env.EC2_IP = ''
+                            env.EC2_IP = '54.159.216.48'
                             env.NODE_ENV = 'development'
-                            env.NATS_SERVERS = ''
+                            env.NATS_SERVERS = 'nats://52.200.251.120:4222'
                             break
                         default:
                             env.DEPLOY_ENV = 'none'
@@ -69,8 +70,10 @@ pipeline {
             }
             steps {
                 script {
+                    def envSuffix = env.DEPLOY_ENV
+                    def sshKeyId = env.DEPLOY_ENV == 'development' ? SSH_CRED_ID_DIEGO : SSH_CRED_ID
                     withCredentials([
-                        sshUserPrivateKey(credentialsId: SSH_CRED_ID, keyFileVariable: 'SSH_KEY'),
+                        sshUserPrivateKey(credentialsId: sshKeyId, keyFileVariable: 'SSH_KEY'),
                     ]) {
                         sh 'chmod +x ./deploy.sh'    
                         def branchName = env.GIT_BRANCH.replaceAll('origin/', '')
